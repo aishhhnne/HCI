@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tic Tac Toe</title>
+
+<style>
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: black;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: Arial, sans-serif;
+    color: white;
+  }
+
+  .screen {
+    display: none;
+    text-align: center;
+  }
+
+  .active {
+    display: block;
+  }
+
+  button {
+    background: white;
+    color: black;
+    border: none;
+    padding: 12px;
+    width: 220px;
+    margin: 10px;
+    font-size: 1rem;
+    cursor: pointer;
+  }
+
+  .board {
+    width: 300px;
+    height: 300px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    margin: auto;
+  }
+
+  .cell {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 4rem;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .cell:nth-child(1),
+  .cell:nth-child(2),
+  .cell:nth-child(4),
+  .cell:nth-child(5),
+  .cell:nth-child(7),
+  .cell:nth-child(8) {
+    border-right: 3px solid white;
+  }
+
+  .cell:nth-child(1),
+  .cell:nth-child(2),
+  .cell:nth-child(3),
+  .cell:nth-child(4),
+  .cell:nth-child(5),
+  .cell:nth-child(6) {
+    border-bottom: 3px solid white;
+  }
+
+  .scoreboard {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 30px;
+    width: 300px;
+    font-size: 0.9rem;
+  }
+
+  .score {
+    text-align: center;
+    width: 100px;
+  }
+
+  .number {
+    font-size: 2rem;
+    margin-top: 5px;
+  }
+</style>
+</head>
+
+<body>
+
+<div id="menu" class="screen active">
+  <h1>TIC TAC TOE</h1>
+  <button onclick="setMode(false)">Player vs Player</button>
+  <button onclick="setMode(true)">Player vs Computer</button>
+  <button onclick="startGame()">Start Game</button>
+  <button onclick="resetStats()">Reset Leaderboard</button>
+</div>
+
+<div id="game" class="screen">
+  <div class="board">
+    <div class="cell" onclick="play(0)"></div>
+    <div class="cell" onclick="play(1)"></div>
+    <div class="cell" onclick="play(2)"></div>
+    <div class="cell" onclick="play(3)"></div>
+    <div class="cell" onclick="play(4)"></div>
+    <div class="cell" onclick="play(5)"></div>
+    <div class="cell" onclick="play(6)"></div>
+    <div class="cell" onclick="play(7)"></div>
+    <div class="cell" onclick="play(8)"></div>
+  </div>
+
+  <div class="scoreboard">
+    <div class="score">
+      PLAYER (X)
+      <div class="number" id="xScore">0</div>
+    </div>
+
+    <div class="score">
+      TIE
+      <div class="number" id="tieScore">0</div>
+    </div>
+
+    <div class="score">
+      COMPUTER (O)
+      <div class="number" id="oScore">0</div>
+    </div>
+  </div>
+
+  <button onclick="goHome()">Dashboard</button>
+</div>
+
+<script>
+  let board = Array(9).fill("");
+  let vsAI = false;
+  let gameOver = false;
+  let currentPlayer = "X";
+
+  let xScore = Number(localStorage.getItem("x")) || 0;
+  let oScore = Number(localStorage.getItem("o")) || 0;
+  let tieScore = Number(localStorage.getItem("t")) || 0;
+
+  const cells = document.querySelectorAll(".cell");
+
+  document.getElementById("xScore").textContent = xScore;
+  document.getElementById("oScore").textContent = oScore;
+  document.getElementById("tieScore").textContent = tieScore;
+
+  const wins = [
+    [0,1,2],[3,4,5],[6,7,8],
+    [0,3,6],[1,4,7],[2,5,8],
+    [0,4,8],[2,4,6]
+  ];
+
+  function setMode(ai) {
+    vsAI = ai;
+  }
+
+  function startGame() {
+    document.getElementById("menu").classList.remove("active");
+    document.getElementById("game").classList.add("active");
+    resetBoard();
+  }
+
+  function goHome() {
+    document.getElementById("game").classList.remove("active");
+    document.getElementById("menu").classList.add("active");
+  }
+
+  function play(i) {
+    if (board[i] || gameOver) return;
+
+    board[i] = currentPlayer;
+    cells[i].textContent = currentPlayer;
+
+    if (checkWin(currentPlayer)) return;
+    if (board.every(c => c)) return draw();
+
+    currentPlayer = currentPlayer === "X" ? "O" : "X";
+
+    if (vsAI && currentPlayer === "O") {
+      setTimeout(() => {
+        let move = bestMove();
+        play(move);
+      }, 300);
+    }
+  }
+
+  function checkWin(player) {
+    if (wins.some(w => w.every(i => board[i] === player))) {
+      gameOver = true;
+      if (player === "X") xScore++;
+      else oScore++;
+      save();
+      restart();
+      return true;
+    }
+    return false;
+  }
+
+  function draw() {
+    tieScore++;
+    save();
+    restart();
+  }
+
+  function restart() {
+    setTimeout(resetBoard, 700);
+  }
+
+  function resetBoard() {
+    board.fill("");
+    cells.forEach(c => c.textContent = "");
+    currentPlayer = "X";
+    gameOver = false;
+  }
+
+  function save() {
+    localStorage.setItem("x", xScore);
+    localStorage.setItem("o", oScore);
+    localStorage.setItem("t", tieScore);
+    document.getElementById("xScore").textContent = xScore;
+    document.getElementById("oScore").textContent = oScore;
+    document.getElementById("tieScore").textContent = tieScore;
+  }
+
+  function resetStats() {
+    if (!confirm("Reset leaderboard?")) return;
+    xScore = oScore = tieScore = 0;
+    save();
+  }
+
+  function bestMove() {
+    let bestScore = -Infinity;
+    let move;
+    for (let i = 0; i < 9; i++) {
+      if (!board[i]) {
+        board[i] = "O";
+        let score = minimax(board, 0, false);
+        board[i] = "";
+        if (score > bestScore) {
+          bestScore = score;
+          move = i;
+        }
+      }
+    }
+    return move;
+  }
+
+  function minimax(b, d, isMax) {
+    if (check("O")) return 10 - d;
+    if (check("X")) return d - 10;
+    if (b.every(c => c)) return 0;
+
+    let best = isMax ? -Infinity : Infinity;
+    for (let i = 0; i < 9; i++) {
+      if (!b[i]) {
+        b[i] = isMax ? "O" : "X";
+        best = isMax
+          ? Math.max(best, minimax(b, d+1, false))
+          : Math.min(best, minimax(b, d+1, true));
+        b[i] = "";
+      }
+    }
+    return best;
+  }
+
+  function check(p) {
+    return wins.some(w => w.every(i => board[i] === p));
+  }
+</script>
+
+</body>
+</html>
